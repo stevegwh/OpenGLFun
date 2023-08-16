@@ -1,8 +1,0 @@
-# ninja log v5
-1	56	1692176292239472350	build.ninja	e4b2e686ad4d362f
-4	464	1692176286992571704	CMakeFiles/OpenGLTomfoolery.dir/main.cpp.o	1936ea58273bc4bd
-0	5	0	clean	3c8e6cc385ee00ba
-367	538	1692176262814420874	OpenGLTomfoolery	3b213fa1db907a3b
-0	41	1692176292239472350	build.ninja	e4b2e686ad4d362f
-5	318	1692176292562409172	CMakeFiles/OpenGLTomfoolery.dir/main.cpp.o	e19be6005ec95a81
-318	463	1692176292706847746	OpenGLTomfoolery	3b213fa1db907a3b
