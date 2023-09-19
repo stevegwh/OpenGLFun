@@ -3,11 +3,13 @@ project(OpenGLTomfoolery)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(glfw3 3.3.8 REQUIRED)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_CXX_FLAGS "-framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo")
+    find_package(glfw3 3.3.8 REQUIRED)
+    find_package(glm REQUIRED)
     add_executable(OpenGLTomfoolery main.cpp)
-    target_link_libraries(OpenGLTomfoolery glfw)
+    target_link_libraries(OpenGLTomfoolery glfw glm::glm)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
