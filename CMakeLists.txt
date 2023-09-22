@@ -15,8 +15,7 @@ endif()
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     find_package(glfw3 3.3.8 REQUIRED)
     find_package(OpenGL REQUIRED)
-
+    find_package(GLEW REQUIRED)
     add_executable(OpenGLTomfoolery main.cpp)
-    target_link_libraries(OpenGLTomfoolery glfw OpenGL)
-
+    target_link_libraries(OpenGLTomfoolery glew glfw OpenGL)
 endif()
