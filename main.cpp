@@ -6,58 +6,31 @@
 
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <cmath>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <sstream>
-#include <glm/glm.hpp>
+#include <fstream>
 #include <array>
+#include "Mesh.hpp"
+#include "ObjParser.hpp"
+#include "Renderer.hpp"
+#include "Renderable.hpp"
 
-struct ShaderProgramSource
+static std::string load_shader(const char* filePath)
 {
-    std::string VertexShader;
-    std::string FragmentShader;
-};
-
-static ShaderProgramSource ParseShader(const char* filePath)
-{
-
-    enum ShaderType
-    {
-        NONE = -1, VERTEX = 0, FRAGMENT = 1
-    };
-
     std::ifstream stream(filePath);
-    ShaderType type = ShaderType :: NONE;
     std::string line;
-    std::stringstream ss[2];
+    std::stringstream ss;
     while (getline(stream,line))
     {
-        if (line.find("#shader") != std::string :: npos)
-        {
-            if (line.find("vertex") != std::string ::npos)
-            {
-                // vertex mode
-                type = ShaderType::VERTEX;
-
-            }
-            else
-            {
-                // fragment mode
-                type = ShaderType::FRAGMENT;
-
-            }
-        }
-        else
-        {
-            ss[(int)type] << line << '\n'; // Add line to the stream string
-        }
+        ss << line << '\n';
     }
-    return {ss[0].str(), ss[1].str()};
+    return ss.str();
 }
 
-static unsigned int CompileShader(unsigned int type, const char* src)
+static unsigned int compile_shader(unsigned int type, const char* src)
 {
     unsigned int id = glCreateShader(type);
 
@@ -73,7 +46,7 @@ static unsigned int CompileShader(unsigned int type, const char* src)
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)alloca(length *sizeof(char));
         glGetShaderInfoLog(id, GL_INFO_LOG_LENGTH, &length,message);
-        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex " : "fragment") << "shader" << "\n";
+        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex " : "fragment ") << "shader" << "\n";
         std::cout << message << std::endl;
         glDeleteShader(id);
         return 0;
@@ -82,11 +55,11 @@ static unsigned int CompileShader(unsigned int type, const char* src)
     return id;
 }
 
-static unsigned int CreateShader(const char* vertexShader, const char* fragmentShader)
+static unsigned int create_shader(const char* vertexShader, const char* fragmentShader)
 {
     unsigned int program = glCreateProgram();
-    unsigned int vShader = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    unsigned int vShader = compile_shader(GL_VERTEX_SHADER, vertexShader);
+    unsigned int fShader = compile_shader(GL_FRAGMENT_SHADER, fragmentShader);
 
     glAttachShader(program,vShader);
     glAttachShader(program,fShader);
@@ -101,6 +74,14 @@ static unsigned int CreateShader(const char* vertexShader, const char* fragmentS
 
 int main()
 {
+    slib::texture texture = slib::DecodePng("resources/texture3.png");
+    Mesh* cubeMesh = ObjParser::ParseObj("resources/cube.obj", texture);
+    Renderable cubeInstance(*cubeMesh, {0, 0, -5}, { 0, 0, 0 }, { 1, 1 ,1 }, { 100, 100, 255 }, 
+                            cubeMesh->vertices, cubeMesh->normals);
+    slib::Camera camera = { {0,0,0}, {0,0,0}, {0,0,-1}, {0,1,0}, zFar, zNear}; 
+    Renderer renderer(&camera);
+    renderer.AddRenderable(cubeInstance);
+    
     GLFWwindow* window;
 
     /* Initialize the library */
@@ -112,7 +93,7 @@ int main()
     glm::vec3 test;
     test.x = 1;
     
-    window = glfwCreateWindow(640, 480, "Hello World", nullptr, nullptr);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGL Fun", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -122,10 +103,11 @@ int main()
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
-//    if (glewInit() != GLEW_OK) {
-//        std::cout << "Error " << std::endl;
-//    }
-
+#ifdef __linux__
+    if (glewInit() != GLEW_OK) {
+        std::cout << "Error " << std::endl;
+    }
+#endif
 
     std::array<float, 6> position = {
         0,    0.5f,
@@ -134,14 +116,16 @@ int main()
     };
     
     unsigned int buffer;
-    glGenBuffers(1, &buffer);// Generate
+    glGenBuffers(1, &buffer); // Generate
     glBindBuffer(GL_ARRAY_BUFFER, buffer ); // Select buffer
     glBufferData(GL_ARRAY_BUFFER, position.size() * sizeof(position[0]), position.data(), GL_STATIC_DRAW); // Set the buffer data into the buffer
     glEnableVertexAttribArray(0); // Enable the attribute of the array from the selected buffer's 0 index
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
-
-    ShaderProgramSource source = ParseShader("myFirstShader.shader");
-    unsigned int shader = CreateShader(source.VertexShader.c_str(), source.FragmentShader.c_str());
+    
+    auto vertexShader = load_shader("resources/vertex.shader");
+    auto fragShader = load_shader("resources/fragment.shader");
+    
+    unsigned int shader = create_shader(vertexShader.c_str(), fragShader.c_str());
     glUseProgram(shader);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
